@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daffodil 3D Education</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffffff, #d3e6f5);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            padding: 5px;
+            margin-bottom: 5px;
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 10px;
+            animation: float 3s infinite ease-in-out;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+        }
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: #2a5298;
+            font-weight: bold;
+        }
+        p {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .signin-button {
+            background-color: #034ec6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            
+        }
+
+        a:link { 
+  text-decoration: none; 
+} 
+a:visited { 
+  text-decoration: none; 
+} 
+a:hover { 
+  text-decoration: none; 
+} 
+a:active { 
+  text-decoration: none; 
+}
+        .signin-button:hover {
+            background-color: #1e58d5;
+            transform: scale(1.05);
+            
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #264070;
+            color: rgb(242, 242, 242);
+            text-align: center;
+            padding: 0px;
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .google-icon {
+            width: 30px;
+            height: 30px;
+        }
+        .decorative-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .circle {
+            position: absolute;
+            background-color: rgba(86, 144, 219, 0.2);
+            border-radius: 50%;
+            animation: scaleup 8s infinite;
+        }
+        .circle-1 {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 15%;
+            animation-delay: 0s;
+        }
+        .circle-2 {
+            width: 150px;
+            height: 150px;
+            bottom: 20%;
+            right: 20%;
+            animation-delay: 2s;
+        }
+        .circle-3 {
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: 4s;
+        }
+        @keyframes scaleup {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.6;
+            }
+        }
+        .animated-image {
+            position: bottom, center, fixed;
+            margin-bottom: 2%;
+            
+            width: 400px;
+            animation: bounce 4s infinite ease-in-out;
+            border: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            
+            
+        }
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+        @media screen and (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            p {
+                font-size: 1rem;
+            }
+            .signin-button {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="decorative-elements">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+    </div>
+    <div class="container">
+        <img src="logo.png" alt="Daffodil Polytechnic Institute" class="logo">
+        <h1>Welcome to Daffodil Family 3D Education System</h1>
+        <p>Explore the new dimension of Daffodil Polytechnic Institute</p>
+        <a href="https://dev-27zvae6yewwrl3m1.us.auth0.com/authorize?response_type=token&client_id=GqoX1y8guXZUic40jtRepYof1EpdnkMC&redirect_uri=https://alik005.github.io/gd-website/careerwing.html&connection=google-oauth2&hd=bsdi-bd.org&prompt=login&state=secureRandomString123"><button class="signin-button" onclick="handleSignIn()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/archive/c/c1/20170301123009%21Google_%22G%22_logo.svg" alt="Google Icon" class="google-icon">
+            Sign in with Google
+        </button></a>
+    </div>
+    <img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExemdmeGsweTNnMGFiOHUwZzl6Z3hqYnFrYWo1d2s1cnBscTJlNW4xdiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT39CTrFW4nHLdBPpu/giphy-downsized-large.gif" alt="3D Model" class="animated-image">
+    <div class="footer">
+        <p>&copy; 2025 Graphic Design Department, Daffodil Polytechnic Institute. All Rights Reserved.</p>
+    </div>
+
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const circles = document.querySelectorAll('.circle');
+            circles.forEach((circle, index) => {
+                const speed = (index + 1) * 10;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                circle.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        function handleSignIn() {
+            window.location.href = 'library2.html'; // Redirect to the main 3D viewer page after Google Sign-In
+        }
+    </script>
+</body>
+</html>

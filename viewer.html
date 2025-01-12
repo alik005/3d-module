@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional 3D Viewer</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+        }
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #logo img {
+            width: 150px;
+            box-shadow: none;
+            background-color: #ffffff;
+            padding: 5px;
+            border-radius: 10px;
+            border: 20px;
+        }
+        #leftPanel {
+            position: absolute;
+            top: 90px;
+            left: 0;
+            width: 300px;
+            height: calc(100% - 120px);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            overflow-y: auto;
+            padding: 20px;
+            pointer-events: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.7);
+        }
+        #rightPanel {
+            position: absolute;
+            top: 90px;
+            right: 0;
+            width: 300px;
+            height: calc(100% - 120px);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            overflow-y: auto;
+            padding: 20px;
+            pointer-events: auto;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.7);
+        }
+        #animationSelector {
+            margin-top: 20px;
+        }
+        #bottomCenter, #bottomRight {
+            position: absolute;
+            bottom: 20px;
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.85);
+            color: rgb(86, 86, 86);
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #bottomCenter {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #bottomRight {
+            right: 20px;
+            margin-bottom: 50px;
+        }
+        button, select {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 12px;
+            margin: 10px 0;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 5px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+        }
+        button:hover, select:hover {
+            background: #666;
+        }
+
+/* Footer */
+.footer {
+   position: fixed ;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   background-color: #264070;
+   color: rgb(242, 242, 242);
+   text-align: center;
+}
+
+    </style>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gizmoManager/babylon.gizmoManager.min.js"></script>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+
+    <!-- UI Components -->
+    <div id="ui">
+        <div id="logo">
+            <img src="logo.png" alt="Logo">
+        </div>
+        <div id="leftPanel">
+            <h3>Explorer</h3>
+            <div id="modelTree">No model loaded</div>
+        </div>
+
+        
+        <div id="rightPanel">
+            <h3>Environment</h3>
+            <select id="hdrSelector">
+                <option value="">Select HDRI</option>
+                <option value="https://playground.babylonjs.com/textures/environment.env">Default</option>
+                <option value="https://playground.babylonjs.com/textures/studio.env">Studio</option>
+                <option value="https://playground.babylonjs.com/textures/skybox.env">Skybox</option>
+            </select>
+            <div id="animationSelector">
+                <h3>Animations</h3>
+                <select id="animationDropdown">
+                    <option value="">Select Animation</option>
+                </select>
+                <button id="playSelectedAnimation">Play Animation</button>
+                <button id="stopAnimation">Stop Animation</button>
+            </div>
+
+            <div id="clickedPartName">
+        <h3>Selected Part</h3>
+        <p>Part Name Here</p>
+    </div>
+
+        </div>
+        <div id="bottomRight">
+            <button id="resetButton">Reset Model</button>
+            
+        </div>
+       
+        
+    </div>
+ 
+
+    <script>
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+        let scene = null;
+        let currentModel = null;
+        let gizmoManager = null;
+        let originalPositions = new Map();
+
+        // Create the scene
+        const createScene = () => {
+            const scene = new BABYLON.Scene(engine);
+
+            // Add a camera
+            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+
+            // Add a light
+            new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+
+            // Default environment texture
+            scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+                "https://playground.babylonjs.com/textures/environment.env", scene
+            );
+
+            // Gizmo Manager
+            gizmoManager = new BABYLON.GizmoManager(scene);
+            gizmoManager.positionGizmoEnabled = true;
+
+            return scene;
+        };
+
+        // Load a model
+        const loadModel = (file, scene) => {
+            const fileReader = new FileReader();
+            fileReader.onload = (event) => {
+                const arrayBuffer = event.target.result;
+                BABYLON.SceneLoader.Append("", `data:${file.type};base64,${btoa(
+                    new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+                )}`, scene, (loadedScene) => {
+                    // Detach child meshes from root
+                    loadedScene.meshes.forEach((mesh) => {
+                        if (mesh.parent && mesh.parent.name === "__root__") {
+                            mesh.setParent(null);
+                        }
+                    });
+                    storeOriginalPositions(scene);
+                    updateModelTree(scene);
+
+                    // Populate animation dropdown
+                    updateAnimationDropdown(loadedScene);
+
+                    // Auto-focus on the model
+                    const boundingInfo = BABYLON.Mesh.MinMax(loadedScene.meshes);
+                    const extendSize = boundingInfo.max.subtract(boundingInfo.min);
+                    const center = boundingInfo.min.add(extendSize.scale(0.5));
+                    const radius = extendSize.length() / 2;
+
+                    const camera = scene.activeCamera;
+                    camera.target.copyFrom(center);
+                    camera.radius = radius * 2.5;
+
+                    // Set current model for animations
+                    currentModel = loadedScene;
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+        };
+
+        // Store original positions of all meshes
+        const storeOriginalPositions = (scene) => {
+            originalPositions.clear();
+            scene.meshes.forEach((mesh) => {
+                if (mesh.name !== "__root__") {
+                    originalPositions.set(mesh, mesh.position.clone());
+                }
+            });
+        };
+
+        // Reset all parts to their original positions
+        const resetPositions = () => {
+            gizmoManager.attachToMesh(null); // Detach Gizmo
+            originalPositions.forEach((position, mesh) => {
+                mesh.position.copyFrom(position);
+            });
+        };
+
+        // Function to isolate and focus on the selected part
+const isolateAndFocusPart = (mesh, scene) => {
+    // Hide all other meshes
+    scene.meshes.forEach((otherMesh) => {
+        if (otherMesh !== mesh && otherMesh.name !== "__root__") {
+            otherMesh.setEnabled(false);
+        }
+    });
+    mesh.setEnabled(true); // Ensure the selected mesh is visible
+
+    // Focus and zoom on the selected part
+    const boundingInfo = mesh.getBoundingInfo();
+    const extendSize = boundingInfo.boundingBox.extendSizeWorld;
+    const center = boundingInfo.boundingBox.centerWorld;
+
+    const camera = scene.activeCamera;
+    camera.target.copyFrom(center); // Set camera target to the center of the selected part
+    camera.radius = extendSize.length() * 2.5; // Adjust camera radius to fit the part
+
+    // Add "Show All" button
+    addShowAllButton(scene);
+};
+
+// Function to add "Show All" button
+const addShowAllButton = (scene) => {
+    const rightPanel = document.getElementById("rightPanel");
+
+    // Check if the button already exists
+    if (!document.getElementById("showAllButton")) {
+        const showAllButton = document.createElement("button");
+        showAllButton.id = "showAllButton";
+        showAllButton.textContent = "Show All Parts";
+        showAllButton.addEventListener("click", () => {
+            // Show all parts
+            scene.meshes.forEach((mesh) => {
+                mesh.setEnabled(true);
+            });
+
+            // Reset camera
+            const boundingInfo = BABYLON.Mesh.MinMax(scene.meshes);
+            const extendSize = boundingInfo.max.subtract(boundingInfo.min);
+            const center = boundingInfo.min.add(extendSize.scale(0.5));
+            const radius = extendSize.length() / 2;
+
+            const camera = scene.activeCamera;
+            camera.target.copyFrom(center);
+            camera.radius = radius * 2.5;
+
+            // Remove the button after showing all parts
+            rightPanel.removeChild(showAllButton);
+        });
+        rightPanel.appendChild(showAllButton);
+    }
+};
+
+// Update the explorer tree with isolation, focus, and zoom functionality
+const updateModelTree = (scene) => {
+    const tree = document.getElementById("modelTree");
+    tree.innerHTML = "";
+    scene.meshes.forEach((mesh) => {
+        if (mesh.name !== "__root__") {
+            const item = document.createElement("div");
+            item.textContent = mesh.name;
+            item.style.cursor = "pointer";
+            item.onclick = () => {
+                gizmoManager.attachToMesh(mesh); // Attach Gizmo to the selected part
+                isolateAndFocusPart(mesh, scene); // Isolate, focus, and zoom on the selected part
+            };
+            tree.appendChild(item);
+        }
+    });
+};
+
+
+        // Update animation dropdown
+        const updateAnimationDropdown = (loadedScene) => {
+            const dropdown = document.getElementById("animationDropdown");
+            dropdown.innerHTML = "<option value=''>Select Animation</option>";
+
+            if (loadedScene.animationGroups) {
+                loadedScene.animationGroups.forEach((animationGroup, index) => {
+                    const option = document.createElement("option");
+                    option.value = animationGroup.name;
+                    option.textContent = animationGroup.name;
+                    dropdown.appendChild(option);
+                });
+            }
+        };
+
+        // Play selected animation
+        document.getElementById("playSelectedAnimation").addEventListener("click", () => {
+            const dropdown = document.getElementById("animationDropdown");
+            const animationName = dropdown.value;
+
+            if (animationName && currentModel.animationGroups) {
+                currentModel.animationGroups.forEach((animationGroup) => {
+                    if (animationGroup.name === animationName) {
+                        animationGroup.start(true);
+                    } else {
+                        animationGroup.stop();
+                    }
+                });
+            }
+        });
+
+        // Stop animation
+        document.getElementById("stopAnimation").addEventListener("click", () => {
+            if (currentModel.animationGroups) {
+                currentModel.animationGroups.forEach((animationGroup) => {
+                    animationGroup.stop();
+                });
+            }
+        });
+
+        // Handle HDRI selection
+        document.getElementById("hdrSelector").addEventListener("change", (event) => {
+            const url = event.target.value;
+            if (url) {
+                scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(url, scene);
+            }
+        });
+
+        // Reset button functionality
+        document.getElementById("resetButton").addEventListener("click", resetPositions);
+
+        // Drag-and-drop functionality
+        document.addEventListener("dragover", (event) => {
+            event.preventDefault();
+        });
+
+        document.addEventListener("drop", (event) => {
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                loadModel(files[0], scene);
+            }
+        });
+
+        // Initialize the scene
+        scene = createScene();
+        
+
+
+// Check for the `model` query parameter and load the model if present
+const urlParams = new URLSearchParams(window.location.search);
+const modelUrl = urlParams.get('model');
+
+if (modelUrl) {
+    console.log("Loading model from:", modelUrl);
+    BABYLON.SceneLoader.Append(modelUrl, "", scene, (loadedScene) => {
+        console.log("Model successfully loaded from:", modelUrl);
+
+        // Ensure individual parts (hierarchy) are moveable
+        loadedScene.meshes.forEach((mesh) => {
+            if (mesh.parent && mesh.parent.name === "__root__") {
+                mesh.setParent(null); // Detach child meshes from the root
+            }
+        });
+
+        // Auto-focus on the model
+        const boundingInfo = BABYLON.Mesh.MinMax(loadedScene.meshes);
+        const extendSize = boundingInfo.max.subtract(boundingInfo.min);
+        const center = boundingInfo.min.add(extendSize.scale(0.5));
+        const radius = extendSize.length() / 2;
+
+        const camera = scene.activeCamera;
+        camera.target.copyFrom(center);
+        camera.radius = radius * 2.5;
+
+        // Store original positions and update UI components
+        storeOriginalPositions(scene);
+        updateModelTree(scene);
+        updateAnimationDropdown(loadedScene);
+
+        // Set current model for animations
+        currentModel = loadedScene;
+    }, null, (scene, message) => {
+        console.error("Error loading model from query parameter:", message);
+        alert("Failed to load model. Please check the URL.");
+    });
+}
+
+// Start the Babylon.js render loop
+engine.runRenderLoop(() => {
+    scene.render();
+});
+
+// Resize the engine on window resize
+window.addEventListener("resize", () => {
+    engine.resize();
+});
+
+        
+        engine.runRenderLoop(() => {
+            scene.render();
+        });
+
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+       
+        
+        // Function to display clicked part name in the right panel
+const displayPartName = (mesh) => {
+    const rightPanel = document.getElementById("rightPanel");
+    const nameDisplay = document.getElementById("clickedPartName");
+
+    if (!nameDisplay) {
+        const newNameDisplay = document.createElement("div");
+        newNameDisplay.id = "clickedPartName";
+        newNameDisplay.style.marginTop = "20px";
+        newNameDisplay.innerHTML = `<h3>Selected Part</h3><p>${mesh.name}</p>`;
+        rightPanel.appendChild(newNameDisplay);
+    } else {
+        nameDisplay.innerHTML = `<h3>Selected Part</h3><p>${mesh.name}</p>`;
+    }
+};
+
+// Add pointer observable for detecting clicks on meshes
+scene.onPointerObservable.add((pointerInfo) => {
+    if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERPICK) {
+        const pickedMesh = pointerInfo.pickInfo.pickedMesh;
+        if (pickedMesh && pickedMesh.name !== "__root__") {
+            displayPartName(pickedMesh);
+           
+            
+        }
+    }
+});
+
+
+
+
+    </script>
+
+<div class="footer">
+    <p>&copy; 2024 Graphic Design Department, Daffodil Polytechnic Institute. All Rights Reserved</p>
+
+  </div>
+
+
+</body>
+</html>
