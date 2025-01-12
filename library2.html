@@ -324,7 +324,7 @@ async function validateLogin() {
                 console.log("User Info:", user);
             } else {
                 console.error("Error validating token. Redirecting to login.");
-                window.location.href = "https://dev-27zvae6yewwrl3m1.us.auth0.com/authorize?response_type=token&client_id=2OO6jZPetSpVQ3vP2wL5U3qhrnoZgrS0&redirect_uri=https://alik005.github.io/3d-module/library2.html&connection=google-oauth2&hd=bsdi-bd.org&prompt=login&state=secureRandomString123";
+                window.location.href = "https://dev-27zvae6yewwrl3m1.us.auth0.com/authorize?response_type=token&client_id=2OO6jZPetSpVQ3vP2wL5U3qhrnoZgrS0&redirect_uri=https://alik005.github.io/3d-module/index.html&connection=google-oauth2&hd=bsdi-bd.org&prompt=login&state=secureRandomString123";
             }
         } catch (error) {
             console.error("Error fetching user info:", error);
@@ -335,7 +335,7 @@ async function validateLogin() {
     } else {
         // Redirect to login if no token is found
         console.log("No token found. Redirecting to login.");
-        window.location.href = "https://dev-27zvae6yewwrl3m1.us.auth0.com/authorize?response_type=token&client_id=2OO6jZPetSpVQ3vP2wL5U3qhrnoZgrS0&redirect_uri=https://alik005.github.io/3d-module/library2.html&connection=google-oauth2&hd=bsdi-bd.org&prompt=login&state=secureRandomString123";
+        window.location.href = "https://dev-27zvae6yewwrl3m1.us.auth0.com/authorize?response_type=token&client_id=2OO6jZPetSpVQ3vP2wL5U3qhrnoZgrS0&redirect_uri=https://alik005.github.io/3d-module/index.html&connection=google-oauth2&hd=bsdi-bd.org&prompt=login&state=secureRandomString123";
     }
 }
 
