@@ -408,36 +408,44 @@ const modelUrl = urlParams.get('model');
 if (modelUrl) {
     console.log("Loading model from:", modelUrl);
     BABYLON.SceneLoader.Append(modelUrl, "", scene, (loadedScene) => {
-        console.log("Model successfully loaded from:", modelUrl);
+    console.log("Model successfully loaded from:", modelUrl);
 
-        // Ensure individual parts (hierarchy) are moveable
-        loadedScene.meshes.forEach((mesh) => {
-            if (mesh.parent && mesh.parent.name === "__root__") {
-                mesh.setParent(null); // Detach child meshes from the root
-            }
-        });
-
-        // Auto-focus on the model
-        const boundingInfo = BABYLON.Mesh.MinMax(loadedScene.meshes);
-        const extendSize = boundingInfo.max.subtract(boundingInfo.min);
-        const center = boundingInfo.min.add(extendSize.scale(0.5));
-        const radius = extendSize.length() / 2;
-
-        const camera = scene.activeCamera;
-        camera.target.copyFrom(center);
-        camera.radius = radius * 2.5;
-
-        // Store original positions and update UI components
-        storeOriginalPositions(scene);
-        updateModelTree(scene);
-        updateAnimationDropdown(loadedScene);
-
-        // Set current model for animations
-        currentModel = loadedScene;
-    }, null, (scene, message) => {
-        console.error("Error loading model from query parameter:", message);
-        alert("Failed to load model. Please check the URL.");
+    // Ensure individual parts (hierarchy) are moveable
+    loadedScene.meshes.forEach((mesh) => {
+        if (mesh.parent && mesh.parent.name === "__root__") {
+            mesh.setParent(null); // Detach child meshes from the root
+        }
     });
+
+    // Stop all animations in the loaded scene
+    if (loadedScene.animationGroups) {
+        loadedScene.animationGroups.forEach((animationGroup) => {
+            animationGroup.stop();
+        });
+    }
+
+    // Auto-focus on the model
+    const boundingInfo = BABYLON.Mesh.MinMax(loadedScene.meshes);
+    const extendSize = boundingInfo.max.subtract(boundingInfo.min);
+    const center = boundingInfo.min.add(extendSize.scale(0.5));
+    const radius = extendSize.length() / 2;
+
+    const camera = scene.activeCamera;
+    camera.target.copyFrom(center);
+    camera.radius = radius * 2.5;
+
+    // Store original positions and update UI components
+    storeOriginalPositions(scene);
+    updateModelTree(scene);
+    updateAnimationDropdown(loadedScene);
+
+    // Set current model for animations
+    currentModel = loadedScene;
+}, null, (scene, message) => {
+    console.error("Error loading model from query parameter:", message);
+    alert("Failed to load model. Please check the URL.");
+});
+
 }
 
 // Start the Babylon.js render loop
