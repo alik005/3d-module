@@ -368,22 +368,89 @@ const addShowAllButton = (scene) => {
 };
 
 // Update the explorer tree with isolation, focus, and zoom functionality
+// Update the explorer tree with groups and parts
 const updateModelTree = (scene) => {
     const tree = document.getElementById("modelTree");
-    tree.innerHTML = "";
+    tree.innerHTML = ""; // Clear the current tree
+
+    const groups = new Map(); // Map to store groups by their parent name
+
+    // Group meshes by parent
     scene.meshes.forEach((mesh) => {
         if (mesh.name !== "__root__") {
+            const parentName = mesh.parent ? mesh.parent.name : null;
+            if (parentName) {
+                if (!groups.has(parentName)) {
+                    groups.set(parentName, []);
+                }
+                groups.get(parentName).push(mesh);
+            } else {
+                groups.set(mesh.name, [mesh]); // Single, non-grouped mesh
+            }
+        }
+    });
+
+    // Populate the tree with groups and individual objects
+    groups.forEach((groupMeshes, groupName) => {
+        const groupItem = document.createElement("div");
+        groupItem.style.cursor = "pointer";
+        groupItem.style.marginBottom = "10px";
+
+        // Create a group header
+        const groupHeader = document.createElement("div");
+        groupHeader.textContent = groupName;
+        groupHeader.style.fontWeight = "bold";
+        groupHeader.style.color = "lightblue";
+
+        groupHeader.addEventListener("click", () => {
+            moveGroup(groupMeshes, scene); // Move the entire group
+        });
+
+        groupItem.appendChild(groupHeader);
+
+        // Add individual meshes under the group
+        const childList = document.createElement("div");
+        childList.style.marginLeft = "10px";
+
+        groupMeshes.forEach((mesh) => {
             const item = document.createElement("div");
             item.textContent = mesh.name;
             item.style.cursor = "pointer";
+            item.style.color = "white";
+
             item.onclick = () => {
                 gizmoManager.attachToMesh(mesh); // Attach Gizmo to the selected part
                 isolateAndFocusPart(mesh, scene); // Isolate, focus, and zoom on the selected part
             };
-            tree.appendChild(item);
+            childList.appendChild(item);
+        });
+
+        groupItem.appendChild(childList);
+        tree.appendChild(groupItem);
+    });
+};
+
+// Move the group of meshes together
+const moveGroup = (groupMeshes, scene) => {
+    gizmoManager.attachToMesh(groupMeshes[0]); // Attach Gizmo to the first mesh in the group
+
+    // Sync the movement of all meshes in the group
+    groupMeshes[0].onBeforeRenderObservable.add(() => {
+        const parentPosition = groupMeshes[0].position;
+        groupMeshes.slice(1).forEach((mesh) => {
+            mesh.position = parentPosition.add(mesh.metadata.offset);
+        });
+    });
+
+    // Calculate and store offsets for all group members
+    groupMeshes.forEach((mesh, index) => {
+        if (index > 0) {
+            const offset = mesh.position.subtract(groupMeshes[0].position);
+            mesh.metadata = { offset };
         }
     });
 };
+
 
 
         // Update animation dropdown
