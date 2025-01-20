@@ -236,26 +236,47 @@
 
         // Create the scene
         const createScene = () => {
-            const scene = new BABYLON.Scene(engine);
+    const scene = new BABYLON.Scene(engine);
 
-            // Add a camera
-            const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
-            camera.attachControl(canvas, true);
+    // Add a camera with smooth and precise movement
+    const camera = new BABYLON.ArcRotateCamera(
+        "camera",
+        Math.PI / 2, // Alpha angle
+        Math.PI / 4, // Beta angle
+        10, // Radius
+        BABYLON.Vector3.Zero(), // Target
+        scene
+    );
+    camera.attachControl(canvas, true);
 
-            // Add a light
-            new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+    // Fine-tune smooth navigation settings
+    camera.inertia = 0.95; // Smooth continuation of rotation
+    camera.lowerRadiusLimit = 1; // Minimum zoom distance
+    camera.upperRadiusLimit = 5000; // Maximum zoom distance
+    camera.wheelDeltaPercentage = 0.005; // Slower and smoother zoom with mouse wheel
+    camera.panningInertia = 0.8; // Smooth panning release
+    camera.angularSensibilityX = 2000; // Reduce horizontal rotation sensitivity
+    camera.angularSensibilityY = 2000; // Reduce vertical rotation sensitivity
 
-            // Default environment texture
-            scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
-                "https://playground.babylonjs.com/textures/environment.env", scene
-            );
+    // Panning settings
+    camera.panningSensibility = 500; // Lower sensitivity for precise panning
+    camera.useBouncingBehavior = true; // Enable bounce-back at zoom limits
+    camera.pinchDeltaPercentage = 0.01; // Smooth pinch-to-zoom (for touch devices)
 
-            // Gizmo Manager
-            gizmoManager = new BABYLON.GizmoManager(scene);
-            gizmoManager.positionGizmoEnabled = true;
+    // Add a light
+    new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
 
-            return scene;
-        };
+    // Default environment texture
+    scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+        "https://playground.babylonjs.com/textures/environment.env", scene
+    );
+
+    // Gizmo Manager
+    gizmoManager = new BABYLON.GizmoManager(scene);
+    gizmoManager.positionGizmoEnabled = true;
+
+    return scene;
+};
 
         // Load a model
         const loadModel = (file, scene) => {
