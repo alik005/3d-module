@@ -32,8 +32,31 @@
     #customLoadingScreen img {
         max-width: 300px; /* Adjust size as needed */
         max-height: 300px;
+        animation: rotate 4s linear infinite, pulse 2s ease-in-out infinite;
     }
 
+    /* Rotation animation */
+    @keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Scaling (pulsating) animation */
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
         #renderCanvas {
             width: 100%;
             height: 100%;
@@ -271,7 +294,9 @@
 
 
 
-// Create a custom loading screen with your logo
+
+
+// Create a custom loading screen with your animated logo
 let loadingScreenElement;
 
 const showLoadingScreen = function () {
@@ -317,14 +342,35 @@ const createMainScene = function () {
     return scene;
 };
 
-// Simulate asset loading (replace this with actual asset loading logic)
-const mainScene = createMainScene();
+// Function to simulate asset loading
+const simulateAssetLoading = () => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(); // Simulate assets being loaded
+        }, 3000); // Simulate a 3-second loading time (replace with actual loading logic)
+    });
+};
 
-setTimeout(() => {
-    engine.hideLoadingUI(); // Hide the loading screen after assets are loaded
-}, 5000); // Simulate a 5-second loading time
+// Ensure the loading screen stays visible for at least 5 seconds
+const startLoading = async () => {
+    showLoadingScreen();
+
+    // Simulate asset loading and enforce a minimum 5-second delay
+    const assetLoadingPromise = simulateAssetLoading();
+    const minDelayPromise = new Promise((resolve) => setTimeout(resolve, 5000)); // Enforce 5 seconds
+
+    // Wait for both promises to complete
+    await Promise.all([assetLoadingPromise, minDelayPromise]);
+
+    // Hide the loading screen after both conditions are met
+    hideLoadingScreen();
+};
+
+// Start the loading process
+startLoading();
 
 // Render loop for the main scene
+const mainScene = createMainScene();
 engine.runRenderLoop(() => {
     mainScene.render();
 });
