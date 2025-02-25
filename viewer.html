@@ -15,6 +15,25 @@
             background: linear-gradient(135deg, #1e3c72, #2a5298);
             color: white;
         }
+
+        #customLoadingScreen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #222; /* Dark background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    #customLoadingScreen img {
+        max-width: 300px; /* Adjust size as needed */
+        max-height: 300px;
+    }
+
         #renderCanvas {
             width: 100%;
             height: 100%;
@@ -37,13 +56,29 @@
             pointer-events: none;
             z-index: 10;
         }
+
+        #logo2 {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
         #logo img {
             width: 150px;
             box-shadow: none;
-            background-color: #ffffff;
+            
             padding: 5px;
             border-radius: 10px;
             border: 20px;
+        }
+        #logo2 img {
+            width: 160px;
+            box-shadow: none;
+            
+            padding: 5px;
+            border-radius: 10px;
+            border: 40px;
         }
         #leftPanel {
             position: absolute;
@@ -186,6 +221,11 @@
         <div id="logo">
             <img src="logo.png" alt="Logo">
         </div>
+
+        <div id="logo2">
+            <img src="logo2.png" alt="Logo">
+        </div>
+
         <div id="leftPanel">
             <button id="toggleLeftPanel" class="toggle-btn">>>>>></button>
             <h3>Explorer</h3>
@@ -228,6 +268,71 @@
     <script>
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
+
+
+
+// Create a custom loading screen with your logo
+let loadingScreenElement;
+
+const showLoadingScreen = function () {
+    // Create the loading screen container
+    if (!document.getElementById("customLoadingScreen")) {
+        const loadingScreen = document.createElement("div");
+        loadingScreen.id = "customLoadingScreen";
+
+        // Add your custom logo
+        const logo = document.createElement("img");
+        logo.src = "logo.png"; // Replace with your logo path
+
+        // Append the logo to the loading screen
+        loadingScreen.appendChild(logo);
+
+        // Add the loading screen to the document body
+        document.body.appendChild(loadingScreen);
+        loadingScreenElement = loadingScreen;
+    }
+};
+
+const hideLoadingScreen = function () {
+    if (loadingScreenElement) {
+        loadingScreenElement.remove(); // Remove the loading screen
+    }
+};
+
+// Assign the custom loading screen logic
+engine.displayLoadingUI = showLoadingScreen;
+engine.hideLoadingUI = hideLoadingScreen;
+
+// Main scene creation
+const createMainScene = function () {
+    const scene = new BABYLON.Scene(engine);
+
+    // Add your main scene content here (e.g., models, lights, etc.)
+    const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
+
+    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+    light.intensity = 0.7;
+
+    return scene;
+};
+
+// Simulate asset loading (replace this with actual asset loading logic)
+const mainScene = createMainScene();
+
+setTimeout(() => {
+    engine.hideLoadingUI(); // Hide the loading screen after assets are loaded
+}, 5000); // Simulate a 5-second loading time
+
+// Render loop for the main scene
+engine.runRenderLoop(() => {
+    mainScene.render();
+});
+
+// Handle window resize
+window.addEventListener("resize", () => {
+    engine.resize();
+});
 
         let scene = null;
         let currentModel = null;
