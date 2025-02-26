@@ -222,6 +222,7 @@
                     <th>Subject</th>
                     <th>Chapter</th>
                     <th>Model Name</th>
+                    <th>Tutorial</th>
                 </tr>
             </thead>
             <tbody>
@@ -256,7 +257,7 @@
             tableBody.innerHTML = '';
 
             data.slice(1).forEach(row => {
-                const [department, semester, subject, chapter, modelName, modelLink] = row;
+                const [department, semester, subject, chapter, modelName, modelLink, videoName, videolink] = row;
                 const rowElement = document.createElement('tr');
                 rowElement.innerHTML = `
                     <td>${department}</td>
@@ -264,6 +265,7 @@
                     <td>${subject}</td>
                     <td>${chapter}</td>
                     <td><a href="viewer.html?model=${encodeURIComponent(modelLink)}" target="_blank">${modelName}</a></td>
+                    <td><a href="viewer.html?model=${encodeURIComponent(videolink)}" target="_blank">${videoName}</a></td>
                 `;
                 tableBody.appendChild(rowElement);
             });
