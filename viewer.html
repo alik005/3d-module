@@ -387,7 +387,10 @@ window.addEventListener("resize", () => {
 
         // Create the scene
         const createScene = () => {
+            
     const scene = new BABYLON.Scene(engine);
+    scene.useRightHandedSystem = true; // Ensures correct GLTF coordinate system
+
 
     // Add a camera with smooth and precise movement
     const camera = new BABYLON.ArcRotateCamera(
