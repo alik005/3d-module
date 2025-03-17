@@ -780,17 +780,40 @@ const displayPartName = (mesh) => {
     }
 };
 
-// Add pointer observable for detecting clicks on meshes
+// Function to play the animation for a clicked mesh
+const playAnimationForMesh = (mesh) => {
+    if (!currentModel || !currentModel.animationGroups) return;
+
+    // Stop all running animations first
+    currentModel.animationGroups.forEach(animationGroup => {
+        animationGroup.stop();
+    });
+
+    // Try to find an animation group with the same name as the clicked mesh
+    let animationPlayed = false;
+    currentModel.animationGroups.forEach(animationGroup => {
+        if (animationGroup.name === mesh.name) {
+            animationGroup.start(true); // Play animation in loop
+            animationPlayed = true;
+        }
+    });
+
+    if (!animationPlayed) {
+        console.log(`No NLA animation found for: ${mesh.name}`);
+    }
+};
+
+// Detect clicks on 3D parts and trigger animations
 scene.onPointerObservable.add((pointerInfo) => {
     if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERPICK) {
         const pickedMesh = pointerInfo.pickInfo.pickedMesh;
         if (pickedMesh && pickedMesh.name !== "__root__") {
-            displayPartName(pickedMesh);
-           
-            
+            displayPartName(pickedMesh); // Show part name in UI
+            playAnimationForMesh(pickedMesh); // Play its animation
         }
     }
 });
+
 
 const leftPanel = document.getElementById("leftPanel");
 const toggleButton = document.getElementById("toggleLeftPanel");
