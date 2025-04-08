@@ -235,6 +235,65 @@
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://cdn.babylonjs.com/gizmoManager/babylon.gizmoManager.min.js"></script>
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.157.0';
+        import { OrbitControls } from 'https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls.js';
+        import { mergeGeometries } from 'https://cdn.skypack.dev/three/examples/jsm/utils/BufferGeometryUtils.js';
+    
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
+    
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+    
+        const controls = new OrbitControls(camera, renderer.domElement);
+    
+        // Create two example geometries
+        const geometry1 = new THREE.BoxGeometry(1, 1, 1);
+        const geometry2 = new THREE.CylinderGeometry(0.3, 0.3, 1, 32);
+    
+        // Create meshes (applying transforms before merging)
+        const mesh1 = new THREE.Mesh(geometry1);
+        mesh1.position.set(-1.5, 0, 0);
+        mesh1.updateMatrix();
+    
+        const mesh2 = new THREE.Mesh(geometry2);
+        mesh2.position.set(1.5, 0, 0);
+        mesh2.updateMatrix();
+    
+        // Merge the geometries with transforms applied
+        const mergedGeometry = mergeGeometries([
+          geometry1.clone().applyMatrix4(mesh1.matrix),
+          geometry2.clone().applyMatrix4(mesh2.matrix)
+        ]);
+    
+        // Use a single material for the merged mesh
+        const material = new THREE.MeshStandardMaterial({ color: 0x44aa88 });
+        const combinedMesh = new THREE.Mesh(mergedGeometry, material);
+        scene.add(combinedMesh);
+    
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(ambientLight, directionalLight);
+    
+        // Animation loop
+        function animate() {
+          requestAnimationFrame(animate);
+          combinedMesh.rotation.y += 0.01; // All parts rotate together
+          renderer.render(scene, camera);
+        }
+        animate();
+    
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+      </script>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
@@ -432,62 +491,64 @@ window.addEventListener("resize", () => {
     return scene;
 };
 
-        // Load a model
-        const loadModel = (file, scene) => {
-            const fileReader = new FileReader();
-            fileReader.onload = (event) => {
-                const arrayBuffer = event.target.result;
-                BABYLON.SceneLoader.Append("", `data:${file.type};base64,${btoa(
-                    new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-                )}`, scene, (loadedScene) => {
-                    // Detach child meshes from root
-                    loadedScene.meshes.forEach((mesh) => {
-                        if (mesh.parent && mesh.parent.name === "__root__") {
-                            mesh.setParent(null);
-                        }
-                    });
-                    storeOriginalPositions(scene);
-                    updateModelTree(scene);
-
-                    // Populate animation dropdown
-                    updateAnimationDropdown(loadedScene);
-
-                    // Auto-focus on the model
-                    const boundingInfo = BABYLON.Mesh.MinMax(loadedScene.meshes);
-                    const extendSize = boundingInfo.max.subtract(boundingInfo.min);
-                    const center = boundingInfo.min.add(extendSize.scale(0.5));
-                    const radius = extendSize.length() / 2;
-
-                    const camera = scene.activeCamera;
-                    camera.target.copyFrom(center);
-                    camera.radius = radius * 2.5;
-
-                    // Set current model for animations
-                    currentModel = loadedScene;
-                });
-            };
-            fileReader.readAsArrayBuffer(file);
-        };
-
-        // Store original positions of all meshes
-        const storeOriginalPositions = (scene) => {
-            originalPositions.clear();
-            scene.meshes.forEach((mesh) => {
-                if (mesh.name !== "__root__") {
-                    originalPositions.set(mesh, mesh.position.clone());
+       // Load a model
+const loadModel = (file, scene) => {
+    const fileReader = new FileReader();
+    fileReader.onload = (event) => {
+        const arrayBuffer = event.target.result;
+        BABYLON.SceneLoader.Append("", `data:${file.type};base64,${btoa(
+            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+        )}`, scene, (loadedScene) => {
+            // Detach child meshes from root
+            loadedScene.meshes.forEach((mesh) => {
+                if (mesh.parent && mesh.parent.name === "__root__") {
+                    mesh.setParent(null); // Detach from root
                 }
             });
-        };
+            storeOriginalPositions(scene);
+            updateModelTree(scene);
+            // Populate animation dropdown
+            updateAnimationDropdown(loadedScene);
+            // Auto-focus on the model
+            const boundingInfo = BABYLON.Mesh.MinMax(loadedScene.meshes);
+            const extendSize = boundingInfo.max.subtract(boundingInfo.min);
+            const center = boundingInfo.min.add(extendSize.scale(0.5));
+            const radius = extendSize.length() / 2;
+            const camera = scene.activeCamera;
+            camera.target.copyFrom(center);
+            camera.radius = radius * 2.5;
+            // Set current model for animations
+            currentModel = loadedScene;
+        });
+    };
+    fileReader.readAsArrayBuffer(file);
+};
 
-        // Reset all parts to their original positions
-        const resetPositions = () => {
-            gizmoManager.attachToMesh(null); // Detach Gizmo
-            originalPositions.forEach((position, mesh) => {
-                mesh.position.copyFrom(position);
-            });
-        };
+     // Store original positions of all meshes
+const storeOriginalPositions = (scene) => {
+    originalPositions.clear();
+    scene.meshes.forEach((mesh) => {
+        if (mesh.name !== "__root__") {
+            // Store position relative to parent if it exists
+            const position = mesh.parent ? mesh.position.clone() : mesh.getAbsolutePosition().clone();
+            originalPositions.set(mesh, position);
+        }
+    });
+};
 
-        // Function to isolate and focus on the selected part
+// Reset all parts to their original positions
+const resetPositions = () => {
+    gizmoManager.attachToMesh(null); // Detach Gizmo
+    originalPositions.forEach((position, mesh) => {
+        if (mesh.parent) {
+            mesh.position.copyFrom(position); // Restore local position for child meshes
+        } else {
+            mesh.setAbsolutePosition(position); // Restore global position for root meshes
+        }
+    });
+};
+
+   // Function to isolate and focus on the selected part
 const isolateAndFocusPart = (mesh, scene) => {
     // Hide all other meshes
     scene.meshes.forEach((otherMesh) => {
@@ -495,6 +556,7 @@ const isolateAndFocusPart = (mesh, scene) => {
             otherMesh.setEnabled(false);
         }
     });
+
     mesh.setEnabled(true); // Ensure the selected mesh is visible
 
     // Focus and zoom on the selected part
@@ -509,7 +571,6 @@ const isolateAndFocusPart = (mesh, scene) => {
     // Add "Show All" button
     addShowAllButton(scene);
 };
-
 // Function to add "Show All" button
 const addShowAllButton = (scene) => {
     const rightPanel = document.getElementById("rightPanel");
@@ -542,57 +603,72 @@ const addShowAllButton = (scene) => {
     }
 };
 
-// Update the explorer tree with isolation, focus, and zoom functionality
-// Update the explorer tree with groups and parts
 const updateModelTree = (scene) => {
     const tree = document.getElementById("modelTree");
     tree.innerHTML = ""; // Clear the current tree
 
-    const groups = new Map(); // Map to store groups by their parent name
+    // Create a map to organize meshes by their parent
+    const groups = new Map();
+    const standaloneMeshes = [];
 
-    // Group meshes by parent
     scene.meshes.forEach((mesh) => {
         if (mesh.name !== "__root__") {
             const parentName = mesh.parent ? mesh.parent.name : null;
+
             if (parentName) {
+                // Add to the group based on the parent name
                 if (!groups.has(parentName)) {
                     groups.set(parentName, []);
                 }
                 groups.get(parentName).push(mesh);
             } else {
-                groups.set(mesh.name, [mesh]); // Single, non-grouped mesh
+                // Treat standalone meshes as individual entries
+                standaloneMeshes.push(mesh);
             }
         }
     });
 
-    // Populate the tree with groups and individual objects
+    // Populate the tree with collapsible groups
     groups.forEach((groupMeshes, groupName) => {
-        const groupItem = document.createElement("div");
-        groupItem.style.cursor = "pointer";
-        groupItem.style.marginBottom = "10px";
+        // Create a group container
+        const groupContainer = document.createElement("div");
+        groupContainer.style.marginBottom = "10px";
 
-        // Create a group header
+        // Create a collapsible group header
         const groupHeader = document.createElement("div");
         groupHeader.textContent = groupName;
+        groupHeader.style.cursor = "pointer";
         groupHeader.style.fontWeight = "bold";
         groupHeader.style.color = "lightblue";
+        groupHeader.style.display = "flex";
+        groupHeader.style.alignItems = "center";
 
+        // Add a dropdown arrow icon
+        const arrowIcon = document.createElement("span");
+        arrowIcon.textContent = "▶"; // Default collapsed state
+        arrowIcon.style.marginRight = "5px";
+        groupHeader.prepend(arrowIcon);
+
+        // Add click event to toggle group visibility
+        let isCollapsed = true; // Track collapse state
         groupHeader.addEventListener("click", () => {
-            moveGroup(groupMeshes, scene); // Move the entire group
+            isCollapsed = !isCollapsed;
+            arrowIcon.textContent = isCollapsed ? "▶" : "▼"; // Toggle arrow icon
+            childList.style.display = isCollapsed ? "none" : "block"; // Toggle child list visibility
         });
 
-        groupItem.appendChild(groupHeader);
+        groupContainer.appendChild(groupHeader);
 
-        // Add individual meshes under the group
+        // Create a child list for the group
         const childList = document.createElement("div");
         childList.style.marginLeft = "10px";
+        childList.style.display = "none"; // Initially collapsed
 
         groupMeshes.forEach((mesh) => {
             const item = document.createElement("div");
             item.textContent = mesh.name;
             item.style.cursor = "pointer";
             item.style.color = "white";
-
             item.onclick = () => {
                 gizmoManager.attachToMesh(mesh); // Attach Gizmo to the selected part
                 isolateAndFocusPart(mesh, scene); // Isolate, focus, and zoom on the selected part
@@ -600,34 +676,24 @@ const updateModelTree = (scene) => {
             childList.appendChild(item);
         });
 
-        groupItem.appendChild(childList);
-        tree.appendChild(groupItem);
+        groupContainer.appendChild(childList);
+        tree.appendChild(groupContainer);
+    });
+
+    // Add standalone meshes
+    standaloneMeshes.forEach((mesh) => {
+        const item = document.createElement("div");
+        item.textContent = mesh.name;
+        item.style.cursor = "pointer";
+        item.style.color = "white";
+        item.style.marginBottom = "10px";
+        item.onclick = () => {
+            gizmoManager.attachToMesh(mesh); // Attach Gizmo to the selected part
+            isolateAndFocusPart(mesh, scene); // Isolate, focus, and zoom on the selected part
+        };
+        tree.appendChild(item);
     });
 };
-
-// Move the group of meshes together
-const moveGroup = (groupMeshes, scene) => {
-    gizmoManager.attachToMesh(groupMeshes[0]); // Attach Gizmo to the first mesh in the group
-
-    // Sync the movement of all meshes in the group
-    groupMeshes[0].onBeforeRenderObservable.add(() => {
-        const parentPosition = groupMeshes[0].position;
-        groupMeshes.slice(1).forEach((mesh) => {
-            mesh.position = parentPosition.add(mesh.metadata.offset);
-        });
-    });
-
-    // Calculate and store offsets for all group members
-    groupMeshes.forEach((mesh, index) => {
-        if (index > 0) {
-            const offset = mesh.position.subtract(groupMeshes[0].position);
-            mesh.metadata = { offset };
-        }
-    });
-};
-
-
-
         // Update animation dropdown
         const updateAnimationDropdown = (loadedScene) => {
             const dropdown = document.getElementById("animationDropdown");
@@ -764,22 +830,19 @@ window.addEventListener("resize", () => {
         });
        
         
-        // Function to display clicked part name in the right panel
+       // Function to display clicked part name in the right panel
 const displayPartName = (mesh) => {
-    const rightPanel = document.getElementById("rightPanel");
     const nameDisplay = document.getElementById("clickedPartName");
-
     if (!nameDisplay) {
         const newNameDisplay = document.createElement("div");
         newNameDisplay.id = "clickedPartName";
         newNameDisplay.style.marginTop = "20px";
         newNameDisplay.innerHTML = `<h3>Selected Part</h3><p>${mesh.name}</p>`;
-        rightPanel.appendChild(newNameDisplay);
+        document.getElementById("rightPanel").appendChild(newNameDisplay);
     } else {
         nameDisplay.innerHTML = `<h3>Selected Part</h3><p>${mesh.name}</p>`;
     }
 };
-
 // Function to play the animation for a clicked mesh
 const playAnimationForMesh = (mesh) => {
     if (!currentModel || !currentModel.animationGroups) return;
@@ -811,16 +874,26 @@ const playAnimationForMesh = (mesh) => {
     }
 };
 
-    // Detect clicks on meshes and trigger animations
-    scene.onPointerObservable.add((pointerInfo) => {
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERPICK) {
-            const pickedMesh = pointerInfo.pickInfo.pickedMesh;
-            if (pickedMesh && pickedMesh.name !== "__root__") {
-                playAnimationForMesh(pickedMesh); // Play animation and sound
-            }
-        }
-    });
+// Detect clicks on meshes and attach Gizmo for manipulation
+scene.onPointerObservable.add((pointerInfo) => {
+    if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERPICK) {
+        const pickedMesh = pointerInfo.pickInfo.pickedMesh;
 
+        if (pickedMesh && pickedMesh.name !== "__root__") {
+            // Check if the picked mesh is part of a combined object
+            const parentMesh = pickedMesh.parent || pickedMesh;
+
+            // Attach Gizmo to the parent mesh (combined object)
+            gizmoManager.attachToMesh(parentMesh);
+
+            // Display the part name in the right panel
+            displayPartName(parentMesh);
+
+            // Play animation and sound for the clicked part
+            playAnimationForMesh(parentMesh);
+        }
+    }
+});
 const leftPanel = document.getElementById("leftPanel");
 const toggleButton = document.getElementById("toggleLeftPanel");
 
