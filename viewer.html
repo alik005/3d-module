@@ -709,31 +709,38 @@ const updateModelTree = (scene) => {
             }
         };
 
-        // Play selected animation
-        document.getElementById("playSelectedAnimation").addEventListener("click", () => {
-            const dropdown = document.getElementById("animationDropdown");
-            const animationName = dropdown.value;
+       // Play selected animation
+document.getElementById("playSelectedAnimation").addEventListener("click", () => {
+    const dropdown = document.getElementById("animationDropdown");
+    const animationName = dropdown.value;
 
-            if (animationName && currentModel.animationGroups) {
-                currentModel.animationGroups.forEach((animationGroup) => {
-                    if (animationGroup.name === animationName) {
-                        animationGroup.start(true);
-                    } else {
-                        animationGroup.stop();
-                    }
-                });
-            }
+    if (animationName && currentModel.animationGroups) {
+        // Stop and reset all animations first
+        currentModel.animationGroups.forEach((animationGroup) => {
+            animationGroup.stop(); // Stop the animation
+            animationGroup.reset(); // Reset the animation state
+            animationGroup.goToFrame(0); // Forcefully move to the first frame
         });
 
-        // Stop animation
-        document.getElementById("stopAnimation").addEventListener("click", () => {
-            if (currentModel.animationGroups) {
-                currentModel.animationGroups.forEach((animationGroup) => {
-                    animationGroup.stop();
-                });
+        // Find and play the selected animation
+        currentModel.animationGroups.forEach((animationGroup) => {
+            if (animationGroup.name === animationName) {
+                animationGroup.play(true); // Play the selected animation in a loop
             }
         });
+    }
+});
 
+       // Stop animation
+document.getElementById("stopAnimation").addEventListener("click", () => {
+    if (currentModel && currentModel.animationGroups) {
+        currentModel.animationGroups.forEach((animationGroup) => {
+            animationGroup.stop(); // Stop the animation
+            animationGroup.reset(); // Reset the animation state
+            animationGroup.goToFrame(0); // Move to the first frame
+        });
+    }
+});
         // Handle HDRI selection
         document.getElementById("hdrSelector").addEventListener("change", (event) => {
             const url = event.target.value;
